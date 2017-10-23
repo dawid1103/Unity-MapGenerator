@@ -18,13 +18,14 @@ public class MapGenerator : MonoBehaviour
     [Range(0, 200)]
     public int RoomsThreshold = 50;
 
+    public GameObject FloorPrefab;
+    public GameObject WallPrefab;
     public GameObject[] Items;
 
     private Map map;
     private RegionFinder regionFinder;
 
     private Transform boardHolder;
-    private List<List<TileCoordinate>> freeRegions;
 
     void Start()
     {
@@ -33,8 +34,7 @@ public class MapGenerator : MonoBehaviour
         boardHolder = new GameObject("Board").transform;
         GenerateMap();
 
-        freeRegions = regionFinder.GetRegions(0);
-        LayoutObjectAtRandomSpace(Items, 20, 50);
+        //LayoutObjectAtRandomSpace(Items, 20, 50);
     }
 
     private void GenerateMap()
@@ -46,8 +46,8 @@ public class MapGenerator : MonoBehaviour
 
         DateTime start = DateTime.Now;
 
-        map.RandomFill(Seed, FillPercent);
-        map.Smooth();
+        RandomFillMap(Seed, FillPercent);
+        SmoothMap();
         ProcessMap();
 
         MeshGenerator meshGenerator = GetComponent<MeshGenerator>();
@@ -56,6 +56,74 @@ public class MapGenerator : MonoBehaviour
         Debug.Log(string.Format("Map generation total time: {0}ms",
                                 (DateTime.Now - start).Milliseconds));
 
+    }
+
+    private void RandomFillMap(string seed, int fillPercent)
+    {
+        System.Random pseudoRandom = new System.Random(seed.GetHashCode());
+
+        for (int x = 0; x < map.Size.Width; x++)
+        {
+            for (int y = 0; y < map.Size.Height; y++)
+            {
+                if (x == 0 || x == map.Size.Width - 1 || y == 0 || y == map.Size.Height - 1)
+                {
+                    map.Tiles[x, y] = 1;
+                }
+                else
+                {
+                    map.Tiles[x, y] = (pseudoRandom.Next(0, 100) < fillPercent) ? 1 : 0;
+                }
+            }
+        }
+    }
+
+    private void SmoothMap()
+    {
+        for (int i = 0; i < 5; i++)
+
+            for (int x = 0; x < map.Size.Width; x++)
+            {
+                for (int y = 0; y < map.Size.Height; y++)
+                {
+                    int neighbourWallTiles = GetSurroundingWallCount(new TileCoordinate(x, y));
+
+                    if (neighbourWallTiles > 4)
+                    {
+                        map.Tiles[x, y] = 1;
+                    }
+                    else if (neighbourWallTiles < 4)
+                    {
+                        map.Tiles[x, y] = 0;
+                    }
+                }
+            }
+
+    }
+
+    private int GetSurroundingWallCount(TileCoordinate coord)
+    {
+        int wallCount = 0;
+
+        for (int neighbourX = coord.X - 1; neighbourX <= coord.X + 1; neighbourX++)
+        {
+            for (int neighbourY = coord.Y - 1; neighbourY <= coord.Y + 1; neighbourY++)
+            {
+                if (map.IsInRange(neighbourX, neighbourY))
+                {
+                    if (neighbourX != coord.X || neighbourY != coord.Y)
+                    {
+                        wallCount += map.Tiles[neighbourX, neighbourY];
+                    }
+                }
+                else
+                {
+                    wallCount++;
+                }
+            }
+        }
+
+        return wallCount;
     }
 
     private void ProcessMap()
@@ -280,33 +348,31 @@ public class MapGenerator : MonoBehaviour
         return new Vector3(-map.Size.Width / 2 + .5f + tile.X, 0, -map.Size.Height / 2 + .5f + tile.Y);
     }
 
-    private Vector3 GetRandomFreePosition()
-    {
-        int randomRegionIndex = UnityEngine.Random.Range(0, freeRegions.Count - 1);
-        int randomTileIntex = UnityEngine.Random.Range(0, freeRegions[randomRegionIndex].Count - 1);
+    //private Vector3 GetRandomFreePosition()
+    //{
+    //    int randomRegionIndex = UnityEngine.Random.Range(0, freeRegions.Count - 1);
+    //    int randomTileIntex = UnityEngine.Random.Range(0, freeRegions[randomRegionIndex].Count - 1);
 
-        TileCoordinate tile = freeRegions[randomRegionIndex][randomTileIntex];
+    //    TileCoordinate tile = freeRegions[randomRegionIndex][randomTileIntex];
 
-        Vector3 randomPosition = GetWorldPosition(tile);
-        freeRegions[randomRegionIndex].RemoveAt(randomTileIntex);
-        return randomPosition;
-    }
-
-    private void LayoutObjectAtRandomSpace(GameObject[] tileCollection, int minimum, int maximum)
-    {
-        int objectCount = UnityEngine.Random.Range(minimum, maximum + 1);
-        for (int i = 0; i < objectCount; i++)
-        {
-            Vector3 randomPosition = GetRandomFreePosition();
-            GameObject tile = tileCollection[UnityEngine.Random.Range(0, tileCollection.Length)];
-            CreateObject(randomPosition, tile);
-        }
-    }
-
-    private void CreateObject(Vector3 position, GameObject prefab)
-    {
-        GameObject cube = Instantiate(prefab);
-        cube.transform.SetParent(boardHolder);
-        cube.transform.position = position;
-    }
+    //    Vector3 randomPosition = GetWorldPosition(tile);
+    //    freeRegions[randomRegionIndex].RemoveAt(randomTileIntex);
+    //    return randomPosition;
+    //}
+    //private void LayoutObjectAtRandomSpace(GameObject[] tileCollection, int minimum, int maximum)
+    //{
+    //    int objectCount = UnityEngine.Random.Range(minimum, maximum + 1);
+    //    for (int i = 0; i < objectCount; i++)
+    //    {
+    //        Vector3 randomPosition = GetRandomFreePosition();
+    //        GameObject tile = tileCollection[UnityEngine.Random.Range(0, tileCollection.Length)];
+    //        CreateObject(randomPosition, tile);
+    //    }
+    //}
+    //private void CreateObject(Vector3 position, GameObject prefab)
+    //{
+    //    GameObject cube = Instantiate(prefab);
+    //    cube.transform.SetParent(boardHolder);
+    //    cube.transform.position = position;
+    //}
 }
