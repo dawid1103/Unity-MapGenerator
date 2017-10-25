@@ -26,8 +26,9 @@ public class MapGenerator : MonoBehaviour
     private RegionFinder regionFinder;
 
     private Transform boardHolder;
+    private NavigationBaker navMeshBaker;
 
-    void Start()
+    public Map InitializeNewMap()
     {
         map = new Map(MapWidth, MapHeight);
         regionFinder = new RegionFinder(map);
@@ -35,6 +36,8 @@ public class MapGenerator : MonoBehaviour
         GenerateMap();
 
         //LayoutObjectAtRandomSpace(Items, 20, 50);
+
+        return map;
     }
 
     private void GenerateMap()
@@ -53,7 +56,10 @@ public class MapGenerator : MonoBehaviour
         MeshGenerator meshGenerator = GetComponent<MeshGenerator>();
         meshGenerator.GenerateMesh(map, 1f);
 
-        Debug.Log(string.Format("Map generation total time: {0}ms",
+        navMeshBaker = GetComponent<NavigationBaker>();
+        navMeshBaker.Bake();
+
+        Debug.Log(string.Format("Map generation total time: {0} ms",
                                 (DateTime.Now - start).Milliseconds));
 
     }

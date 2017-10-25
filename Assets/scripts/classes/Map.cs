@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class Map
 {
@@ -16,21 +18,26 @@ public class Map
         return x >= 0 && x < Size.Width && y >= 0 && y < Size.Height;
     }
 
-    public List<TileCoordinate> GetFreeTiles()
+    public List<Vector3> GetFreeTiles()
     {
-        List<TileCoordinate> tiles = new List<TileCoordinate>();
+        List<Vector3> tiles = new List<Vector3>();
 
         for (int x = 0; x < Size.Width; x++)
         {
-            for (int y = 0; x < Size.Height; y++)
+            for (int y = 0; y < Size.Height; y++)
             {
-                if (Tiles[x, y] == 1)
+                if (Tiles[x, y] == 0)
                 {
-                    tiles.Add(new TileCoordinate(x, y));
+                    tiles.Add(new Vector3(x, 0, y));
                 }
             }
         }
 
         return tiles;
+    }
+
+    public string Hello()
+    {
+        return DateTime.Now.ToString();
     }
 }
